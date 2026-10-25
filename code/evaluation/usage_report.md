@@ -15,17 +15,17 @@ This solution uses a deterministic, rule-based approach implemented in Python. N
 
 | Phase | Model Calls |
 |-------|-------------|
-| Development (authoring/debugging) | ~15 (estimated, interactive) |
+| Development (authoring/debugging) | ~20 (estimated, interactive) |
 | Production run (`python code/main.py`) | 0 |
-| **Total** | **~15** |
+| **Total** | **~20** |
 
 ## Token Usage
 
 | Phase | Input Tokens | Output Tokens | Total Tokens |
 |-------|-------------|---------------|--------------|
-| Development (estimated) | ~45,000 | ~30,000 | ~75,000 |
+| Development (estimated) | ~60,000 | ~40,000 | ~100,000 |
 | Production run | 0 | 0 | 0 |
-| **Total** | **~45,000** | **~30,000** | **~75,000** |
+| **Total** | **~60,000** | **~40,000** | **~100,000** |
 
 ## Cost Estimate
 
@@ -39,8 +39,8 @@ This solution uses a deterministic, rule-based approach implemented in Python. N
 
 | Model | Calls | Input Tokens | Output Tokens | Total Tokens |
 |-------|-------|-------------|---------------|--------------|
-| nemotron-3.5-super-vl-120b-a12b | ~15 | ~45,000 | ~30,000 | ~75,000 |
-| **Overall** | **~15** | **~45,000** | **~30,000** | **~75,000** |
+| nemotron-3.5-super-vl-120b-a12b | ~20 | ~60,000 | ~40,000 | ~100,000 |
+| **Overall** | **~20** | **~60,000** | **~40,000** | **~100,000** |
 
 ## Production Run Summary
 
@@ -50,6 +50,7 @@ This solution uses a deterministic, rule-based approach implemented in Python. N
 - **Cases processed**: 518 deletion requests
 - **Output**: `output.csv` at repository root
 - **Runtime**: Deterministic, single-pass, no external API calls during execution
+- **Status distribution**: 240 NOT_APPLICABLE, 85 COMPLETE, 193 INCOMPLETE
 
 ## Notes
 
@@ -57,3 +58,4 @@ This solution uses a deterministic, rule-based approach implemented in Python. N
 - Token counts above are estimates for the interactive development phase only.
 - No API keys or credentials are required to run `code/main.py`.
 - All data is read from `dataset/` and written to `output.csv` at the repository root.
+- CSV files use cp1252 encoding; the solution handles this with automatic encoding detection.

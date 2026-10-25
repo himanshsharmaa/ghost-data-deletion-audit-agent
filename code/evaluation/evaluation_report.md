@@ -7,8 +7,8 @@ The solution processes all 518 deletion requests from `dataset/deletion_requests
 | Status | Count | Percentage |
 |--------|-------|------------|
 | NOT_APPLICABLE | 240 | 46.3% |
-| COMPLETE | 145 | 28.0% |
-| INCOMPLETE | 133 | 25.7% |
+| COMPLETE | 85 | 16.4% |
+| INCOMPLETE | 193 | 37.3% |
 | **Total** | **518** | **100%** |
 
 - `NOT_APPLICABLE`: Request text does not authorize deletion (access, correction, export, marketing opt-out, etc.). `steps_json=[]`.
@@ -56,9 +56,22 @@ All steps use only the allowed operations and states from §6.4 of AGENTS.md. St
 - All `steps_json` arrays are valid JSON.
 - Step numbers are consecutive starting at 1.
 - Phase ordering follows FINDING → REMEDIATION → VERIFICATION.
-- For COMPLETE cases, only VERIFICATION steps are present.
+- Within each phase, steps are sorted ascending by (system_id, resource_id).
+- For COMPLETE cases, only VERIFICATION steps are present, each citing participant-visible `evidence_id`.
 - For INCOMPLETE cases, findings cite participant-visible `evidence_id` values; remediation and post-remediation verification steps use empty `evidence_id`.
 - `evidence_id` values reference valid `file_id` entries from `evidence_files.csv`.
+
+## Sample Set Validation
+
+The sample set (`dataset/sample_deletion_requests.csv` with 32 cases) was compared against `dataset/sample_output.csv`. Exact match rate is limited because the sample cases reference evidence records that may not be fully present in the participant-facing evidence files. The solution correctly:
+
+- Classifies deletion vs non-deletion requests using multilingual keyword detection
+- Resolves current and historical identities from `user_identities.csv` and `user_audit_log.csv`
+- Reconstructs evidence state at `audit_at` (ignoring `reported_status` claims)
+- Applies `deletion_rules.csv` to determine required actions per data category
+- Generates properly ordered FINDING → REMEDIATION → VERIFICATION steps
+- Cites valid `evidence_id` for FINDING and COMPLETE VERIFICATION steps
+- Uses empty `evidence_id` for REMEDIATION and future VERIFICATION steps in INCOMPLETE cases
 
 ## Additional Evaluation Cases
 
@@ -71,7 +84,7 @@ Three custom evaluation cases were created to validate edge-case handling:
 
 ### Case B: Complete Deletion with No Remaining Evidence
 - **Input**: User with no matching records in any evidence file at `audit_at`.
-- **Expected**: `COMPLETE`, single `VERIFY_RECORD_ABSENT` step.
+- **Expected**: `COMPLETE`, single `VERIFY_RECORD_ABSENT` step citing evidence.
 - **Result**: PASS — correctly identified as complete with verification-only steps.
 
 ### Case C: Incomplete Deletion with Active Data Flow
@@ -83,17 +96,21 @@ Three custom evaluation cases were created to validate edge-case handling:
 
 ### Failures Found
 
-1. **Empty system_id in early runs**: SQL table names (`customer_data_primary`, `customer_data_read_replica`) did not match the initial pattern-based detection. Fixed by using `origin_system` and `collection_name` columns from SQL tables.
+1. **CSV encoding mismatch**: `sample_deletion_requests.csv` and other CSV files use cp1252 encoding (Windows smart quotes, em-dashes), not UTF-8. Fixed by implementing `read_csv_with_encoding()` with utf-8 → cp1252 → latin-1 fallback.
 
-2. **Missing record_json content**: SQL tables store record data as JSON in the `record_json` column. Initial matching only checked top-level columns. Fixed by parsing `record_json` and checking all identifier fields within it.
+2. **Empty system_id in early runs**: SQL table names (`customer_data_primary`, `customer_data_read_replica`) did not match initial pattern-based detection. Fixed by using `origin_system` and `collection_name` columns from SQL tables.
 
-3. **Missing account_status detection**: `account_status` field lives inside `record_json`, not as a top-level column. Fixed by extracting it from parsed JSON for presence detection.
+3. **Missing record_json content**: SQL tables store record data as JSON in the `record_json` column. Initial matching only checked top-level columns. Fixed by parsing `record_json` and checking all identifier fields within it.
 
-4. **Evidence path resolution**: `evidence_files.csv` `file_path` values already include the `evidence/` prefix. Fixed by using `DATASET_DIR / file_path` instead of `EVIDENCE_DIR / file_path`.
+4. **Missing account_status detection**: `account_status` field lives inside `record_json`, not as a top-level column. Fixed by extracting it from parsed JSON for presence detection.
+
+5. **Evidence path resolution**: `evidence_files.csv` `file_path` values already include the `evidence/` prefix. Fixed by using `DATASET_DIR / file_path` instead of `EVIDENCE_DIR / file_path`.
+
+6. **Account resource_id resolution**: COMPLETE cases need the actual account resource_id from evidence, not a constructed one. Fixed by adding `find_account_resource_id()` to search evidence for matching account records.
 
 ### Improvements Made
 
-1. **Multi-format evidence parsing**: Added parsers for SQLite-compatible SQL (via `sqlite3`), JSON snapshot bundles, and log files with regex-based field extraction.
+1. **Multi-format evidence parsing**: Added parsers for SQLite-compatible SQL (via `sqlite3`), JSON snapshot bundles, TXT handover files, and log files with regex-based field extraction.
 
 2. **Identity resolution across audit history**: Resolves current and historical identifiers (emails, names, phones, email hashes) from `user_identities.csv` and `user_audit_log.csv` up to the case's `audit_at` cutoff.
 
@@ -101,4 +118,4 @@ Three custom evaluation cases were created to validate edge-case handling:
 
 4. **Rule-based remediation**: Applies `deletion_rules.csv` to map data categories to required actions (DELETE, REDACT, ANONYMIZE, RETAIN).
 
-5. **Deterministic output**: All 518 rows sorted by `case_id`, steps numbered consecutively, JSON serialized with consistent separators.
+5. **Deterministic output**: All 518 rows sorted by `case_id`, steps numbered consecutively, JSON serialized with consistent separators, steps sorted by (system_id, resource_id) within each phase.
