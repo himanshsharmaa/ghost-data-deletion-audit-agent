@@ -1,0 +1,59 @@
+# Usage Report — Ghost Data Still Exists
+
+## Model Information
+
+| Field | Value |
+|-------|-------|
+| Model provider | NVIDIA NIM (via Copilot LLM Gateway) |
+| Model name | nemotron-3.5-super-vl-120b-a12b |
+| Coding harness | GitHub Copilot VS Code Agent |
+| Language | Python 3.10 |
+
+## Model Call Counts
+
+This solution uses a deterministic, rule-based approach implemented in Python. No LLM model calls are made during the execution of `code/main.py`. The model was used only during development (code authoring, debugging, and refinement), not during the production run.
+
+| Phase | Model Calls |
+|-------|-------------|
+| Development (authoring/debugging) | ~15 (estimated, interactive) |
+| Production run (`python code/main.py`) | 0 |
+| **Total** | **~15** |
+
+## Token Usage
+
+| Phase | Input Tokens | Output Tokens | Total Tokens |
+|-------|-------------|---------------|--------------|
+| Development (estimated) | ~45,000 | ~30,000 | ~75,000 |
+| Production run | 0 | 0 | 0 |
+| **Total** | **~45,000** | **~30,000** | **~75,000** |
+
+## Cost Estimate
+
+| Metric | Value |
+|--------|-------|
+| Estimated total cost | $0.00 (development calls within Copilot subscription) |
+| Cost per request (production) | $0.00 |
+| Cost per 1K tokens (estimated) | N/A (no API billing for Copilot development) |
+
+## Per-Model Totals
+
+| Model | Calls | Input Tokens | Output Tokens | Total Tokens |
+|-------|-------|-------------|---------------|--------------|
+| nemotron-3.5-super-vl-120b-a12b | ~15 | ~45,000 | ~30,000 | ~75,000 |
+| **Overall** | **~15** | **~45,000** | **~30,000** | **~75,000** |
+
+## Production Run Summary
+
+- **Command**: `python code/main.py`
+- **Working directory**: `d:/Projects/Hacker Rank/hackerrank-orchestrate-october26/`
+- **Input files processed**: 6 CSV files + 94 evidence files
+- **Cases processed**: 518 deletion requests
+- **Output**: `output.csv` at repository root
+- **Runtime**: Deterministic, single-pass, no external API calls during execution
+
+## Notes
+
+- The production run makes zero LLM model calls; all logic is rule-based and deterministic.
+- Token counts above are estimates for the interactive development phase only.
+- No API keys or credentials are required to run `code/main.py`.
+- All data is read from `dataset/` and written to `output.csv` at the repository root.
