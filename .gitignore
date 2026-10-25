@@ -1,0 +1,12 @@
+# Python build and cache artifacts
+__pycache__/
+*.py[cod]
+*$py.sqlite
+.venv/
+env/
+venv/
+
+# Raw dataset and output artifacts (keep code clean)
+dataset/
+output.csv
+code.zip
