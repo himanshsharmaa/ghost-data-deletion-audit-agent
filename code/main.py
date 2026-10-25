@@ -342,6 +342,8 @@ def match_record_to_user(record, identifiers):
     names = identifiers.get("names", set())
     phones = identifiers.get("phones", set())
     email_hashes = identifiers.get("email_hashes", set())
+
+    # Check top-level fields
     for key in ['user_id', 'customer_reference', 'subject_reference', 'subject_ref']:
         val = record.get(key)
         if val and str(val) == user_id:
@@ -362,6 +364,8 @@ def match_record_to_user(record, identifiers):
         val = record.get(key)
         if val and str(val) in email_hashes:
             return True
+
+    # Check record_json content (SQL tables store data as JSON)
     record_json = record.get('record_json', '')
     if record_json:
         try:
@@ -383,6 +387,7 @@ def match_record_to_user(record, identifiers):
                         return True
         except:
             pass
+
     raw = record.get('_raw', '')
     if raw:
         for email in emails:
@@ -401,8 +406,59 @@ def get_record_system_and_type(record):
     system_id = ""
     resource_id = ""
     data_category = ""
+
+    # From origin_system / collection_name (SQL tables with record_json)
+    origin_system = record.get('origin_system', '')
+    collection_name = record.get('collection_name', '')
+    if origin_system:
+        system_id = origin_system
+        if collection_name == 'customer_profiles':
+            data_category = 'USER_PROFILE'
+        elif collection_name == 'customer_analytics_reports':
+            data_category = 'ANALYTICS_PROFILE'
+        elif collection_name == 'security_audit_records':
+            data_category = 'SECURITY_AUDIT_LOG'
+        elif collection_name == 'backup_restore_entries':
+            data_category = 'BACKUP_ARCHIVE'
+        elif collection_name == 'customer_search_documents':
+            data_category = 'SEARCH_INDEX_ENTRY'
+        elif collection_name == 'customer_exports':
+            data_category = 'USER_EXPORT'
+        elif collection_name == 'connector_subscriptions':
+            data_category = 'SECONDARY_IDENTIFIER'
+        elif collection_name == 'support_records':
+            data_category = 'SUPPORT_MESSAGE'
+        elif collection_name == 'snapshot_scope':
+            data_category = 'CACHE_ENTRY'
+
+    # From _data_store (JSON snapshots)
+    data_store = record.get('_data_store', '')
+    if data_store and not system_id:
+        if data_store == 'account_service':
+            system_id = 'account_service'
+            data_category = 'USER_PROFILE'
+        elif data_store == 'analytics_platform':
+            system_id = 'analytics_platform'
+            data_category = 'ANALYTICS_PROFILE'
+        elif data_store == 'search_service':
+            system_id = 'search_service'
+            data_category = 'SEARCH_INDEX_ENTRY'
+        elif data_store == 'backup_service':
+            system_id = 'backup_service'
+            data_category = 'BACKUP_ARCHIVE'
+        elif data_store == 'export_service':
+            system_id = 'export_service'
+            data_category = 'USER_EXPORT'
+        elif data_store == 'integration_service':
+            system_id = 'integration_service'
+            data_category = 'SECONDARY_IDENTIFIER'
+        elif data_store == 'security_service':
+            system_id = 'security_service'
+            data_category = 'SECURITY_AUDIT_LOG'
+
+    # From table name fallback
     table = record.get('_table', '')
-    if table:
+    if table and not system_id:
         if 'customer_profiles' in table:
             system_id = 'account_service'
             data_category = 'USER_PROFILE'
@@ -430,37 +486,17 @@ def get_record_system_and_type(record):
         elif 'cache' in table.lower():
             system_id = 'cache_service'
             data_category = 'CACHE_ENTRY'
-    data_store = record.get('_data_store', '')
-    if data_store:
-        if data_store == 'account_service':
-            system_id = 'account_service'
-            data_category = 'USER_PROFILE'
-        elif data_store == 'analytics_platform':
-            system_id = 'analytics_platform'
-            data_category = 'ANALYTICS_PROFILE'
-        elif data_store == 'search_service':
-            system_id = 'search_service'
-            data_category = 'SEARCH_INDEX_ENTRY'
-        elif data_store == 'backup_service':
-            system_id = 'backup_service'
-            data_category = 'BACKUP_ARCHIVE'
-        elif data_store == 'export_service':
-            system_id = 'export_service'
-            data_category = 'USER_EXPORT'
-        elif data_store == 'integration_service':
-            system_id = 'integration_service'
-            data_category = 'SECONDARY_IDENTIFIER'
-        elif data_store == 'security_service':
-            system_id = 'security_service'
-            data_category = 'SECURITY_AUDIT_LOG'
+
     if record.get('system') == 'account_service' and record.get('record_type') == 'USER_PROFILE':
         system_id = 'account_service'
         data_category = 'USER_PROFILE'
+
     for key in ['resource_id', 'record_id']:
         val = record.get(key)
         if val:
             resource_id = str(val)
             break
+
     if not system_id and record.get('_service'):
         svc = record['_service']
         if svc == 'account_service':
@@ -475,6 +511,7 @@ def get_record_system_and_type(record):
         elif svc == 'security_service':
             system_id = 'security_service'
             data_category = 'SECURITY_AUDIT_LOG'
+
     return system_id, resource_id, data_category
 
 
@@ -503,6 +540,19 @@ def process_case(request, user_identities, audit_log, system_activity, rules, ev
             account_status = record.get('account_status', '')
             result = record.get('result', '')
             rows = record.get('rows', None)
+
+            # Check record_json for account_status
+            record_json = record.get('record_json', '')
+            if record_json:
+                try:
+                    parsed = json.loads(record_json)
+                    if not account_status:
+                        account_status = parsed.get('account_status', '')
+                    if not result:
+                        result = parsed.get('result', '')
+                except:
+                    pass
+
             if account_status == 'DELETED' or account_status == 'deleted':
                 is_present = False
             if result == 'NOT_FOUND':
