@@ -27,12 +27,26 @@ This solution uses a deterministic, rule-based approach implemented in Python. N
 | Production run | 0 | 0 | 0 |
 | **Total** | **~60,000** | **~40,000** | **~100,000** |
 
+For the 518 production requests, measured production usage is zero:
+
+| Metric | Value |
+|--------|------:|
+| Average input tokens per request | 0 |
+| Average output tokens per request | 0 |
+| Average total tokens per request | 0 |
+
+If the estimated development totals are allocated across 518 requests for
+reference, the averages are approximately 115.83 input tokens, 77.22 output
+tokens, and 193.05 total tokens per request. These are not runtime
+measurements; the deterministic production process makes no model calls.
+
 ## Cost Estimate
 
 | Metric | Value |
 |--------|-------|
 | Estimated total cost | $0.00 (development calls within Copilot subscription) |
 | Cost per request (production) | $0.00 |
+| Average estimated cost per request (518-case run) | $0.00 |
 | Cost per 1K tokens (estimated) | N/A (no API billing for Copilot development) |
 
 ## Per-Model Totals

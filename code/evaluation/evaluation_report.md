@@ -73,6 +73,21 @@ The sample set (`dataset/sample_deletion_requests.csv` with 32 cases) was compar
 - Cites valid `evidence_id` for FINDING and COMPLETE VERIFICATION steps
 - Uses empty `evidence_id` for REMEDIATION and future VERIFICATION steps in INCOMPLETE cases
 
+### Sample Metrics
+
+| Metric | Result |
+|--------|--------|
+| Exact output-row matches | 0/32 (0.0%) |
+| Exact case-level status matches | Not separately retained from the comparison run |
+| Exact step/field matches | Not separately retained from the comparison run |
+| Exact sequence matches | Not separately retained from the comparison run |
+| Structural validation of generated sample rows | Passed for valid JSON, required fields, phase ordering, and consecutive step numbers |
+
+The zero exact-row result is reported transparently rather than converted into
+an inferred field score: expected sample references were not consistently
+discoverable in the participant-facing evidence set, so separate status,
+field, and sequence denominators were not available from the retained run.
+
 ## Additional Evaluation Cases
 
 Three custom evaluation cases were created to validate edge-case handling:
